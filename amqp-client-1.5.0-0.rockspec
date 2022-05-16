@@ -12,7 +12,7 @@ description = {
       
       Developed by: Meng Zhang, Aleksey Konovkin, 4mig4 and Denys Santos.
    ]],
-   homepage = "https://github.com/graygnuorg/amqp-client"
+   homepage = "https://github.com/graygnuorg/amqp-client",
    maintainer = "Denys G. Santos <gsdenys@gmail.com>",
    license = "Apache 2.0"
 }
