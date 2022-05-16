@@ -7,12 +7,6 @@
 local c = require ('amqp.consts')
 local frame = require ('amqp.frame')
 local logger = require ('amqp.logger')
-local bit = require('bit')
-
-local band = bit.band
-local bor = bit.bor
-local lshift = bit.lshift
-local rshift = bit.rshift
 
 local format = string.format
 local gmatch = string.gmatch
@@ -140,7 +134,7 @@ function amqp:new(opts)
     revision = c.PROTOCOL_VERSION_REVISION,
     frame_max = c.DEFAULT_FRAME_SIZE,
     channel_max = c.DEFAULT_MAX_CHANNELS,
-    mechanism = opts.mechanism or c.MECHANISM_PLAIN
+    mechanism = c.MECHANISM_PLAIN
   }
 
   setmetatable(ctx,mt)
@@ -568,7 +562,7 @@ local function timedout(ctx, timeouts)
   local threshold = ctx.threshold or 4
   local counter = 0
   for i = 1, window do
-    if band(rshift(timeouts,i-1),1) ~= 0 then
+    if ((timeouts >> (i-1)) & 1) ~= 0 then
       counter = counter + 1
     end
   end
@@ -645,7 +639,7 @@ function amqp:consume_loop(callback)
       local now = os.time()
       if now - hb.last > c.DEFAULT_HEARTBEAT then
         logger.dbg("[amqp:consume_loop] timeouts inc. [ts]: ",now)
-        hb.timeouts = bor(lshift(hb.timeouts,1),1)
+        hb.timeouts = ((hb.timeouts << 1) | 1)
         hb.last = now
         ok, err0 = frame.wire_heartbeat(self)
         if not ok then
@@ -712,7 +706,7 @@ function amqp:consume_loop(callback)
     elseif f.type == c.frame.HEARTBEAT_FRAME then
       hb.last = os.time()
       logger.dbg("[heartbeat]","ping received. [ts]: ", hb.last)
-      hb.timeouts = band(lshift(hb.timeouts,1),0)
+      hb.timeouts = ((hb.timeouts << 1) & 0)
       ok, err0 = frame.wire_heartbeat(self)
       if not ok then
         logger.error("[heartbeat]","pong error: ", err0 or "?", "[ts]: ", hb.last)

@@ -4,13 +4,6 @@
 --
 
 local logger = require('amqp.logger')
-local bit = require('bit')
-
-local band = bit.band
-local bor = bit.bor
-local lshift = bit.lshift
-local rshift = bit.rshift
-local tohex = bit.tohex
 
 local concat = table.concat
 local sub = string.sub
@@ -35,7 +28,7 @@ function buffer:hex_dump()
   local len = #self.buffer_
   local bytes = new_tab(len, 0)
   for i = 1, len do
-    bytes[i] = tohex(byte(self.buffer_, i), 2)
+    bytes[i] = string.format("%02h", byte(self.buffer_, i))
   end
   return concat(bytes, " ")
 end
@@ -53,7 +46,7 @@ end
 
 function buffer:get_i16()
   local a0, a1 = byte(self.buffer_, self.pos_, self.pos_ + 1)
-  local r = bor(a1, lshift(a0, 8))
+  local r = (a1 | (a0 << 8))
   self.pos_ = self.pos_ + 2
   return r
 end
@@ -62,26 +55,21 @@ end
 function buffer:get_i24()
   local a0, a1, a2 = byte(self.buffer_, self.pos_, self.pos_ + 2)
   self.pos_ = self.pos_ + 3
-  return bor(a2,
-  lshift(a1, 8),
-  lshift(a0, 16))
+  return (a2 |  (a1 << 8) | (a0 << 16))
 end
 
 function buffer:get_i32()
   local a0, a1, a2, a3 = byte(self.buffer_, self.pos_, self.pos_ + 3)
   self.pos_ = self.pos_ + 4
-  return bor(a3,
-  lshift(a2, 8),
-  lshift(a1, 16),
-  lshift(a0, 24))
+  return (a3 | (a2 << 8) | (a1 << 16) | (a0 << 24))
 end
 
 function buffer:get_i64()
   local a, b, c, d, e, f, g, h = byte(self.buffer_, self.pos_, self.pos_ + 7)
   self.pos_ = self.pos_ + 8
 
-  local lo = bor(h, lshift(g, 8), lshift(f, 16), lshift(e, 24))
-  local hi = bor(d, lshift(c, 8), lshift(b, 16), lshift(a, 24))
+  local lo = (h | (g << 8) | (f << 16) | (e << 24))
+  local hi = (d | (c << 8) | (b << 16) | (a << 24))
   return lo + hi * 4294967296
 end
 
@@ -152,7 +140,7 @@ end
 
 
 function buffer:put_i8(i)
-  self.buffer_ = self.buffer_ .. char(band(i,0x0ff))
+  self.buffer_ = self.buffer_ .. char(i & 0x0ff)
 end
 
 function buffer:put_bool(b)
@@ -165,25 +153,25 @@ end
 
 function buffer:put_i16(i)
   self.buffer_ = self.buffer_ ..
-  char(rshift(band(i,0xff00),8)) ..
-  char(band(i,0x0ff))
+  char((i & 0xff00) >> 8) ..
+  char(i & 0x0ff)
 
 end
 
 function buffer:put_i32(i)
   self.buffer_ = self.buffer_ ..
-  char(rshift(band(i,0xff000000),24)) ..
-  char(rshift(band(i, 0x00ff0000),16)) ..
-  char(rshift(band(i, 0x0000ff00),8)) ..
-  char(band(i, 0x000000ff))
+  char((i & 0xff000000)>>24) ..
+  char((i & 0x00ff0000)>>16) ..
+  char((i & 0x0000ff00)>>8) ..
+  char(i & 0x000000ff)
 end
 
 function buffer:put_i64(i)
 
   -- rshift has not support for 64bit?
   -- side effect is that it will rotate for shifts bigger than 32bit
-  local hi = band(i/4294967296,0x0ffffffff)
-  local lo = band(i, 0x0ffffffff)
+  local hi = (i/4294967296) & 0x0ffffffff
+  local lo = (i & 0x0ffffffff)
   self:put_i32(hi)
   self:put_i32(lo)
 end

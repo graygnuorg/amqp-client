@@ -10,10 +10,6 @@
 local c = require('amqp.consts')
 local buffer = require('amqp.buffer')
 local logger = require('amqp.logger')
-local bit = require('bit')
-
-local band = bit.band
-local bor = bit.bor
 
 local byte = string.byte
 
@@ -27,23 +23,23 @@ local function declare_exchange_flags(method)
   local bits = 0
 
   if method.passive then
-    bits = bor(bits,1)
+    bits = (bits | 1)
   end
 
   if method.durable then
-    bits = bor(bits, 2)
+    bits = (bits | 2)
   end
 
   if method.auto_delete then
-    bits = bor(bits, 4)
+    bits = (bits | 4)
   end
 
   if method.internal then
-    bits = bor(bits,8)
+    bits = (bits | 8)
   end
 
   if method.no_wait then
-    bits = bor(bits, 16)
+    bits = (bits | 16)
   end
 
   return bits
@@ -58,10 +54,10 @@ end
 
 local function parse_exchange_flags(bits)
   local flags = {}
-  flags.passive = toboolean(band(bits, 1))
-  flags.auto_delete = toboolean(band(bits, 4))
-  flags.internal = toboolean(band(bits, 8))
-  flags.no_wait = toboolean(band(bits, 16))
+  flags.passive = toboolean(bits & 1)
+  flags.auto_delete = toboolean(bits & 4)
+  flags.internal = toboolean(bits & 8)
+  flags.no_wait = toboolean(bits & 16)
   return flags
 end
 
@@ -69,23 +65,23 @@ local function declare_queue_flags(method)
   local bits = 0
 
   if method.passive then
-    bits = bor(bits,1)
+    bits = (bits | 1)
   end
 
   if method.durable then
-    bits = bor(bits, 2)
+    bits = (bits | 2)
   end
 
   if method.exclusive then
-    bits = bor(bits, 4)
+    bits = (bits | 4)
   end
 
   if method.auto_delete then
-    bits = bor(bits, 8)
+    bits = (bits | 8)
   end
 
   if method.no_wait then
-    bits = bor(bits, 16)
+    bits = (bits | 16)
   end
 
   return bits
@@ -93,11 +89,11 @@ end
 
 local function parse_queue_flags(bits)
   local flags = {}
-  flags.passive = toboolean(band(bits, 1))
-  flags.durable = toboolean(band(bits, 2))
-  flags.exclusive = toboolean(band(bits, 4))
-  flags.auto_delete = toboolean(band(bits, 8))
-  flags.no_wait = toboolean(band(bits, 16))
+  flags.passive = toboolean(bits & 1)
+  flags.durable = toboolean(bits & 2)
+  flags.exclusive = toboolean(bits & 4)
+  flags.auto_delete = toboolean(bits & 8)
+  flags.no_wait = toboolean(bits & 16)
   return flags
 end
 
@@ -105,19 +101,19 @@ local function basic_consume_flags(method)
   local bits = 0
 
   if method.no_local then
-    bits = bor(bits,1)
+    bits = (bits | 1)
   end
 
   if method.no_ack then
-    bits = bor(bits, 2)
+    bits = (bits | 2)
   end
 
   if method.exclusive then
-    bits = bor(bits, 4)
+    bits = (bits | 4)
   end
 
   if method.no_wait then
-    bits = bor(bits, 8)
+    bits = (bits | 8)
   end
 
   return bits
@@ -125,25 +121,25 @@ end
 
 local function parse_consume_flags(bits)
   local flags = {}
-  flags.no_local = toboolean(band(bits,1))
-  flags.no_ack = toboolean(band(bits,2))
-  flags.exclusive = toboolean(band(bits,4))
-  flags.no_wait = toboolean(band(bits,8))
+  flags.no_local = toboolean(bits & 1)
+  flags.no_ack = toboolean(bits & 2)
+  flags.exclusive = toboolean(bits & 4)
+  flags.no_wait = toboolean(bits & 8)
   return flags
 end
 
 local function parse_exchange_delete_flags(bits)
   local flags = {}
-  flags.if_unused = toboolean(band(bits,1))
-  flags.no_wait = toboolean(band(bits,2))
+  flags.if_unused = toboolean(bits & 1)
+  flags.no_wait = toboolean(bits & 2)
   return flags
 end
 
 local function parse_queue_delete_flags(bits)
   local flags = {}
-  flags.if_unused = toboolean(band(bits,1))
-  flags.if_empty = toboolean(band(bits,2))
-  flags.no_wait = toboolean(band(bits,4))
+  flags.if_unused = toboolean(bits & 1)
+  flags.if_empty = toboolean(bits & 2)
+  flags.no_wait = toboolean(bits & 4)
   return flags
 end
 
@@ -376,7 +372,7 @@ local methods_ = {
       name = "flow_ok",
       r = function(b)
         local bits = b:get_i8()
-        return { active = band(bits,1) }
+        return { active = (bits & 1) }
       end,
       w = function(method)
         local b = buffer.new()
@@ -486,10 +482,10 @@ local methods_ = {
         b:put_short_string(method.exchange)
         local bits = 0
         if method.if_unused then
-          bits = bor(bits,1)
+          bits = (bits | 1)
         end
         if method.no_wait then
-          bits = bor(bits,2)
+          bits = (bits | 2)
         end
         b:put_i8(bits)
         return b:payload()
@@ -613,13 +609,13 @@ local methods_ = {
         b:put_short_string(method.queue)
         local bits = 0
         if method.if_unused then
-          bits = bor(bits,1)
+          bits = (bits | 1)
         end
         if method.if_empty then
-          bits = bor(bits,2)
+          bits = (bits | 2)
         end
         if method.no_wait then
-          bits = bor(bits, 4)
+          bits = (bits | 4)
         end
         b:put_i8(bits)
         return b:payload()
@@ -683,7 +679,7 @@ local methods_ = {
         b:put_short_string(method.queue)
         local bits = 0
         if method.no_wait then
-          bits = bor(bits, 1)
+          bits = (bits | 1)
         end
         b:put_i8(bits)
         return b:payload()
@@ -914,10 +910,10 @@ local methods_ = {
         b:put_short_string(method.routing_key)
         local bits = 0
         if method.mandatory then
-          bits = bor(bits,1)
+          bits = (bits | 1)
         end
         if method.immediate then
-          bits = bor(bits,2)
+          bits = (bits | 2)
         end
         b:put_i8(bits)
         return b:payload()
@@ -929,8 +925,8 @@ local methods_ = {
         f.exchange = b:get_short_string()
         f.routing_key = b:get_short_string()
         local bits = b:get_i8()
-        f.mandatory = band(bits,1)
-        f.immediate = band(bits,2)
+        f.mandatory = (bits & 1)
+        f.immediate = (bits & 2)
         return f
       end
     },
@@ -1001,8 +997,8 @@ local methods_ = {
         local f = {}
         f.delivery_tag = b:get_i64()
         local v = b:get_i8()
-        f.multiple = (band(v,0x1) ~= 0)
-        f.requeue = (band(v,0x2) ~= 0)
+        f.multiple = ((v & 0x1) ~= 0)
+        f.requeue = ((v & 0x2) ~= 0)
         return f
       end,
       w = function(method)
@@ -1010,10 +1006,10 @@ local methods_ = {
         b:put_i64(method.delivery_tag)
         local bits = 0
         if method.multiple and method.multiple ~= 0 then
-          bits = bor(bits, 1)
+          bits = (bits | 1)
         end
         if method.requeue and method.requeue ~= 0 then
-          bits = bor(bit, 2)
+          bits = (bit | 2)
         end
         b:put_i16(bits)
         return b:payload()
@@ -1146,59 +1142,59 @@ local function header_frame(data,channel)
 
   frame.flag = flag
 
-  if band(flag,c.flag.CONTENT_TYPE) ~= 0 then
+  if (flag & c.flag.CONTENT_TYPE) ~= 0 then
     frame.properties.content_type= b:get_short_string()
   end
 
-  if band(flag,c.flag.CONTENT_ENCODING) ~= 0 then
+  if (flag & c.flag.CONTENT_ENCODING) ~= 0 then
     frame.properties.content_encoding = b:get_short_string()
   end
 
-  if band(flag,c.flag.HEADERS) ~= 0 then
+  if (flag & c.flag.HEADERS) ~= 0 then
     frame.properties.headers = b:get_field_table()
   end
 
-  if band(flag,c.flag.DELIVERY_MODE) ~= 0 then
+  if (flag & c.flag.DELIVERY_MODE) ~= 0 then
     frame.properties.delivery_mode = b:get_i8()
   end
 
-  if band(flag,c.flag.PRIORITY) ~= 0 then
+  if (flag & c.flag.PRIORITY) ~= 0 then
     frame.properties.priority = b:get_i8()
   end
 
-  if band(flag,c.flag.CORRELATION_ID) ~= 0 then
+  if (flag & c.flag.CORRELATION_ID) ~= 0 then
     frame.properties.correlation_id = b:get_short_string()
   end
 
-  if band(flag,c.flag.REPLY_TO) ~= 0 then
+  if (flag & c.flag.REPLY_TO) ~= 0 then
     frame.properties.reply_to = b:get_short_string()
   end
 
-  if band(flag,c.flag.EXPIRATION) ~= 0 then
+  if (flag & c.flag.EXPIRATION) ~= 0 then
     frame.properties.expiration = b:get_short_string()
   end
 
-  if band(flag,c.flag.MESSAGE_ID) ~= 0 then
+  if (flag & c.flag.MESSAGE_ID) ~= 0 then
     frame.properties.message_id = b:get_short_string()
   end
 
-  if band(flag,c.flag.TIMESTAMP) ~= 0 then
+  if (flag & c.flag.TIMESTAMP) ~= 0 then
     frame.properties.timestamp = b:get_timestamp()
   end
 
-  if band(flag,c.flag.TYPE) ~= 0 then
+  if (flag & c.flag.TYPE) ~= 0 then
     frame.properties.type = b:get_short_string()
   end
 
-  if band(flag,c.flag.USER_ID) ~= 0 then
+  if (flag & c.flag.USER_ID) ~= 0 then
     frame.properties.user_id = b:get_short_string()
   end
 
-  if band(flag,c.flag.APP_ID) ~= 0 then
+  if (flag & c.flag.APP_ID) ~= 0 then
     frame.properties.app_id = b:get_short_string()
   end
 
-  if band(flag,c.flag.RESERVED1) ~= 0 then
+  if (flag & c.flag.RESERVED1) ~= 0 then
     frame.properties.reserved1 = b:get_short_string()
   end
 
@@ -1332,40 +1328,40 @@ local function flags_mask(frame)
     return mask
   end
   if frame.properties.content_type ~= nil then
-    mask = bor(mask,c.flag.CONTENT_TYPE)
+    mask = (mask | c.flag.CONTENT_TYPE)
   end
   if frame.properties.content_encoding ~= nil then
-    mask = bor(mask,c.flag.CONTENT_ENCODING)
+    mask = (mask | c.flag.CONTENT_ENCODING)
   end
   if frame.properties.headers ~= nil then
-    mask = bor(mask,c.flag.HEADERS)
+    mask = (mask | c.flag.HEADERS)
   end
   if frame.properties.delivery_mode ~= nil then
-    mask = bor(mask,c.flag.DELIVERY_MODE)
+    mask = (mask | c.flag.DELIVERY_MODE)
   end
   if frame.properties.priority ~= nil then
-    mask = bor(mask,c.flag.PRIORITY)
+    mask = (mask | c.flag.PRIORITY)
   end
   if frame.properties.correlation_id ~= nil then
-    mask = bor(mask,c.flag.CORRELATION_ID)
+    mask = (mask | c.flag.CORRELATION_ID)
   end
   if frame.properties.reply_to ~= nil then
-    mask = bor(mask,c.flag.REPLY_TO)
+    mask = (mask | c.flag.REPLY_TO)
   end
   if frame.properties.expiration ~= nil then
-    mask = bor(mask,c.flag.EXPIRATION)
+    mask = (mask | c.flag.EXPIRATION)
   end
   if frame.properties.timestamp ~= nil then
-    mask = bor(mask,c.flag.TIMESTAMP)
+    mask = (mask | c.flag.TIMESTAMP)
   end
   if frame.properties.type ~= nil then
-    mask = bor(mask,c.flag.TYPE)
+    mask = (mask | c.flag.TYPE)
   end
   if frame.properties.user_id ~= nil then
-    mask = bor(mask,c.flag.USER_ID)
+    mask = (mask | c.flag.USER_ID)
   end
   if frame.properties.app_id ~= nil then
-    mask = bor(mask,c.flag.APP_ID)
+    mask = (mask | c.flag.APP_ID)
   end
   return mask
 end
@@ -1378,55 +1374,55 @@ local function encode_header_frame(frame)
 
   local flags = flags_mask(frame)
   b:put_i16(flags)
-  if band(flags,c.flag.CONTENT_TYPE) ~= 0 then
+  if (flags & c.flag.CONTENT_TYPE) ~= 0 then
     b:put_short_string(frame.properties.content_type)
   end
 
-  if band(flags,c.flag.CONTENT_ENCODING) ~= 0 then
+  if (flags & c.flag.CONTENT_ENCODING) ~= 0 then
     b:put_short_string(frame.properties.content_encoding)
   end
 
-  if band(flags,c.flag.HEADERS) ~= 0 then
+  if (flags & c.flag.HEADERS) ~= 0 then
     b:put_field_table(frame.properties.headers)
   end
 
-  if band(flags,c.flag.DELIVERY_MODE) ~= 0 then
+  if (flags & c.flag.DELIVERY_MODE) ~= 0 then
     b:put_i8(frame.properties.delivery_mode)
   end
 
-  if band(flags,c.flag.PRIORITY) ~= 0 then
+  if (flags & c.flag.PRIORITY) ~= 0 then
     b:put_i8(frame.properties.priority)
   end
 
-  if band(flags,c.flag.CORRELATION_ID) ~= 0 then
+  if (flags & c.flag.CORRELATION_ID) ~= 0 then
     b:put_short_string(frame.properties.correlation_id)
   end
 
-  if band(flags,c.flag.REPLY_TO) ~= 0 then
+  if (flags & c.flag.REPLY_TO) ~= 0 then
     b:put_short_string(frame.properties.reply_to)
   end
 
-  if band(flags,c.flag.EXPIRATION) ~= 0 then
+  if (flags & c.flag.EXPIRATION) ~= 0 then
     b:put_short_string(frame.properties.expiration)
   end
 
-  if band(flags,c.flag.MESSAGE_ID) ~= 0 then
+  if (flags & c.flag.MESSAGE_ID) ~= 0 then
     b:put_short_string(frame.properties.message_id)
   end
 
-  if band(flags,c.flag.TIMESTAMP) ~= 0 then
+  if (flags & c.flag.TIMESTAMP) ~= 0 then
     b:put_time_stamp(frame.properties.timestamp)
   end
 
-  if band(flags,c.flag.TYPE) ~= 0 then
+  if (flags & c.flag.TYPE) ~= 0 then
     b:put_short_string(frame.properties.type)
   end
 
-  if band(flags,c.flag.USER_ID) ~= 0 then
+  if (flags & c.flag.USER_ID) ~= 0 then
     b:put_short_string(frame.properties.user_id)
   end
 
-  if band(flags,c.flag.APP_ID) ~= 0 then
+  if (flags & c.flag.APP_ID) ~= 0 then
     b:put_short_string(frame.properties.app_id)
   end
 
