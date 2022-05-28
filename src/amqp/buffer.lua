@@ -170,7 +170,7 @@ function buffer:put_i64(i)
 
   -- rshift has not support for 64bit?
   -- side effect is that it will rotate for shifts bigger than 32bit
-  local hi = (i/4294967296) & 0x0ffffffff
+  local hi = (i // 4294967296) & 0x0ffffffff
   local lo = (i & 0x0ffffffff)
   self:put_i32(hi)
   self:put_i32(lo)
